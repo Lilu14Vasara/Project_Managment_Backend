@@ -20,8 +20,18 @@ const getTasks = async (req, res) => {
     project:new  mongoose.Types.ObjectId(projectId)
  }).populate("assignedTo","avtar username email");
 
- return res.status(200).json(new ApiResponse(200,"Tasks retrieved successfully",tasks));
+ return res.status(200).json(new ApiResponse(200,tasks,"Tasks retrieved successfully"));
 }
+// const getTasks = async (req, res) => {
+//     const { projectId } = req.params;
+  
+//     const tasks = await Task.find({ project: projectId })
+//       .populate("assignedTo", "username");
+  
+//     return res.status(200).json(
+//       new ApiResponse(200, tasks, "Tasks retrieved successfully")
+//     );
+//   };
 
 const getTaskById = async (req, res) => {
     const{taskId} = req.params;
@@ -100,35 +110,42 @@ const getTaskById = async (req, res) => {
 
 }
 const createTask = async (req, res) => {
-    const{title,description,assignedTo,status}=req.body;
-    const {projectId} = req.params;
-     
-    const project=await Project.findById(projectId);
+    const { title, description, assignedTo, status } = req.body;
+    const { projectId } = req.params;
+  
+    const project = await Project.findById(projectId);
     if (!project) {
-        throw new ApiError(404,"Project not found");
+      throw new ApiError(404, "Project not found");
     }
-    const files=req.files||[];
-
- const attachments = files.map(file=>{
-        return {
-            url: `${process.env.BASE_URL}/images/${file.filename}`,
-           mimeType: file.mimetype,
-           size: file.size
-        }
-    })
-    const task=await Task.create({
-        title,
-        description,
-        assignedTo:assignedTo? new mongoose.Types.ObjectId(assignedTo):undefined,
-        project:new mongoose.Types.ObjectId(projectId),
-        status,
-        assignedBy: new mongoose.Types.ObjectId(req.user._id),
-        attachments
-    })
-
-    return res.status(201).json(new ApiResponse(201,"Task created successfully",task));
-
-}
+  
+    const files = req.files || [];
+  
+    const attachments = files.map((file) => ({
+      url: `${process.env.BASE_URL}/images/${file.filename}`,
+      mimeType: file.mimetype,
+      size: file.size
+    }));
+  
+    const task = await Task.create({
+      title,
+      description,
+      assignedTo: assignedTo
+        ? new mongoose.Types.ObjectId(assignedTo)
+        : null,
+      project: new mongoose.Types.ObjectId(projectId),
+      status,
+      assignedBy: new mongoose.Types.ObjectId(req.user._id),
+      attachments
+    });
+  
+    const createdTask = await Task.findById(task._id)
+      .populate("assignedTo", "username email")
+      .populate("assignedBy", "username");
+  
+      return res.status(200).json(
+        new ApiResponse(200, task, "Tasks retrieved successfully")
+      );
+};
 
 const updateTask = async (req, res) => {
     const { taskId } = req.params;
@@ -174,19 +191,15 @@ const deleteTask = async (req, res) => {
 
 const getSubtasks = async (req, res) => {
     const { taskId } = req.params;
-
+  
     const subtasks = await Subtask.find({
-        task: new mongoose.Types.ObjectId(taskId)
+      task: new mongoose.Types.ObjectId(taskId),
     }).populate("createdBy", "username fullName avtar");
-
-    if (!subtasks || subtasks.length === 0) {
-        throw new ApiError(404, "No subtasks found");
-    }
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, "Subtasks fetched successfully", subtasks));
-};
+  
+    return res.status(200).json(
+      new ApiResponse(200, subtasks, "Subtasks fetched successfully")
+    );
+  };
 const createSubtask = async (req, res) => {
     const { taskId } = req.params;
     const { title } = req.body;

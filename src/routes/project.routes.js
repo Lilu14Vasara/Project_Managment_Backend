@@ -5,6 +5,7 @@ import {getProject,
     addmemberToProject,
     getProjectMembers,
     updateProjectMemberRole,
+    getAllProjects,
     deleteProjectMember} from "../controllers/project.controllers.js";
 
 import {validateProjectPermission,verifyJWT} from "../middlewares/auth.middleware.js";
@@ -14,6 +15,11 @@ import { Router } from "express";
 
     const router = Router();
 
+    router.get(
+        "/",
+        verifyJWT,
+        getAllProjects
+      );
     router.get("/:projectId",verifyJWT,validateProjectPermission(AvailableRole),getProject);
     router.post("/",verifyJWT,createProject);   
     router.put("/:projectId",verifyJWT,validateProjectPermission([UserRole.ADMIN]),updateProject);

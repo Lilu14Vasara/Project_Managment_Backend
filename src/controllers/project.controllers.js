@@ -7,6 +7,17 @@ import APiResponse from "../utils/api-response.js";
 import ApiError from "../utils/api-error.js";
 
 
+
+const getAllProjects = async (req, res) => {
+    const projects = await Project.find({
+      createdBy: req.user._id
+    });
+  
+    return res.status(200).json(
+      new APiResponse(200, projects, "Projects fetched successfully")
+    );
+  };
+
 const getProject=async(req,res)=>{
     const{ projectId}=req.params;
 
@@ -158,7 +169,7 @@ const getProjectMembers=async(req,res)=>{
                 user:1,
                 createdAt:1,
                 updatedAt:1,
-                _id:0
+                _id:1,
             }
         }
 
@@ -224,7 +235,8 @@ export  {
     addmemberToProject,
     getProjectMembers,
     updateProjectMemberRole,
-    deleteProjectMember
+    deleteProjectMember,
+    getAllProjects
 }
 
 
